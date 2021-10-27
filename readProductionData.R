@@ -3,7 +3,7 @@
 #
 # Questions:
 # - Would it be possible to get more data on grades of syrup?
-# - Does the production include all production or the contigent supplied to the PPAQ? 
+# - Does the production include all production or the contingent supplied to the PPAQ? 
 #----------------------------------------------------------------------------------------
 
 # load dependencies 
@@ -29,7 +29,7 @@ addAlpha <- function (col,       # color name
   invisible (colAlpha)
 }
 
-# read file 
+# read production data file 
 #----------------------------------------------------------------------------------------
 production <- readxl::read_excel (path = '../data/PPAQ/20211019_MR_InfoProd.xlsx',
                                   sheet = '20211019_MR_InfoProd',
@@ -46,6 +46,11 @@ production <- readxl::read_excel (path = '../data/PPAQ/20211019_MR_InfoProd.xlsx
 #----------------------------------------------------------------------------------------
 production <- production %>% 
   mutate (meanProduction = totalProduction / numberOfTaps)
+production [which (is.infinite (production$meanProduction)), ]
+# 788 instances the number of taps is zero but production was above zero,
+# I assume the number of taps was simply not reported and set it to NA in the following.
+# NB - I could investigate the imputation of those numbers
+production$meanProduction [which (is.infinite (production$meanProduction))] <- NA
 
 # get some basic statistics and plots
 #----------------------------------------------------------------------------------------
@@ -142,7 +147,7 @@ hist (producerSize / 1000, col = addAlpha (colours [1], 30), main = '', las = 1,
       lty = 1, xlim = c (0, 60))
 dev.off ()
 
-# mean total production
+# plot mean total production
 annualProduction <- production %>% group_by (year) %>% 
   summarise (meanTotalProduction = mean (totalProduction) / 1000,
              sdTotalProduction   = sd   (totalProduction) / 1000,
@@ -162,7 +167,47 @@ axis (side = 1, at = 2005:2021)
 axis (side = 2, at = seq (0, 30, by = 5), las = 1)
 dev.off ()
 
-# plot across-producer mean of mean production per tap over time
 # plot sum of taps over time
+numberOfTaps <- production %>% group_by (year) %>% 
+  summarise (sumNumberOfTaps = sum (numberOfTaps),
+             sdNumberOfTaps = sd (numberOfTaps, na.rm = TRUE), 
+             .groups = 'drop')
+png ('../fig/numberOfTapsOverTime.png', width = 700, height = 400)
+plot (x = numberOfTaps$year,
+      y = numberOfTaps$sumNumberOfTaps / 1e6,
+      ylab = 'Number of taps (millions)', las = 1, ylim = c (30, 50), axes = FALSE)
+lines (x = numberOfTaps$year,
+       y = numberOfTaps$sumNumberOfTaps / 1e6, col = colours [1])
+polygon (x = c (numberOfTaps$year, rev (numberOfTaps$year)),
+         y = c ((numberOfTaps$sumNumberOfTaps - numberOfTaps$sdNumberOfTaps) / 1e6, 
+                rev ((numberOfTaps$sumNumberOfTaps + numberOfTaps$sdNumberOfTaps) / 1e6)),
+         col = addAlpha (colours [1], 80), lty = 0)
+points (x = numberOfTaps$year,
+        y = numberOfTaps$sumNumberOfTaps / 1e6, col = colours [1], pch = 19)
+axis (side = 1)
+axis (side = 2, las = 1)
+dev.off ()
+
+# plot across-producer mean of mean production per tap over time
+meanAnnualProduction <- production %>% group_by (year) %>%
+  summarise (meanAnnualProduction = mean (meanProduction, na.rm = TRUE), 
+             sdAnnualProduction = sd (meanProduction, na.rm = TRUE), .groups = 'drop')
+png ('../fig/meanProductionOverTime.png', width = 700, height = 400)
+par (mar = c (3, 5, 1, 1))
+plot (x = meanAnnualProduction$year,
+      y = meanAnnualProduction$meanAnnualProduction,
+      ylab = 'Mean production (pounds of syrup per tap)', las = 1, ylim = c (0, 5), axes = FALSE)
+lines (x = meanAnnualProduction$year,
+       y = meanAnnualProduction$meanAnnualProduction, col = colours [1])
+polygon (x = c (meanAnnualProduction$year, rev (meanAnnualProduction$year)),
+         y = c (meanAnnualProduction$meanAnnualProduction - meanAnnualProduction$sdAnnualProduction, 
+                rev (meanAnnualProduction$meanAnnualProduction + meanAnnualProduction$sdAnnualProduction)),
+         col = addAlpha (colours [1], 80), lty = 0)
+points (x = meanAnnualProduction$year,
+        y = meanAnnualProduction$meanAnnualProduction, col = colours [1], pch = 19)
+axis (side = 1)
+axis (side = 2, las = 1)
+dev.off ()
+
 # add fits to all data
 #========================================================================================
