@@ -173,6 +173,7 @@ numberOfTaps <- production %>% group_by (year) %>%
              sdNumberOfTaps = sd (numberOfTaps, na.rm = TRUE), 
              .groups = 'drop')
 png ('../fig/numberOfTapsOverTime.png', width = 700, height = 400)
+par (mar = c (3,5,1,1))
 plot (x = numberOfTaps$year,
       y = numberOfTaps$sumNumberOfTaps / 1e6,
       ylab = 'Number of taps (millions)', las = 1, ylim = c (30, 50), axes = FALSE)
