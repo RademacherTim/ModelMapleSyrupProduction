@@ -2,7 +2,9 @@
 # Script to match maple syrup producer data with climate data 
 #
 # Questions:
-# - 
+# - Generally works but need to figure out what is going on with multiple matches
+# - Need to integrate region into the matching 
+# - Need to deal with cases when there are two municipalities with the same name in the same region
 #----------------------------------------------------------------------------------------
 
 # source dependencies
