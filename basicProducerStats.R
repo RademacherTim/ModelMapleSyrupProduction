@@ -76,9 +76,43 @@ for (r in regions) {
 }
 mtext (side = 2, line = 3.5, at = 9, text = 'Number of taps (millions)')
 
+# Total production by region over time
+#----------------------------------------------------------------------------------------
+productionByRegion <- productionSub %>% group_by (region, year) %>% 
+  summarise (totalProduction = sum (totalProduction), .groups = 'drop')
+par (mfrow = c (1, 1))
+par (mar = c (3, 5, 1, 1))
+plot (NULL, xlim = c (2005, 2021), ylim = c (0, 54), xlab = '',
+      axes = FALSE, ylab = 'Total production (millions of pounds of syrup)')
+axis (side = 2, las = 1)
+axis (side = 1)
+for (r in regions) {
+  tmp <- productionByRegion %>% filter (region == r)
+  lines (x = tmp$year, y = tmp$totalProduction / 1e6, lwd = 2, col = regionColours [which (regions == r)])
+}
+legend (y = 56, x = 2004.5, box.lty = 0, 
+        col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
+        legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
+        lwd = 2, bg = 'transparent', cex = 0.6)
 
 # Mean production by region over time
 #----------------------------------------------------------------------------------------
-
+productionByRegion <- productionSub %>% group_by (region, year) %>% 
+  summarise (meanProduction = mean (meanProduction, na.rm = TRUE), 
+             sdProduction = sd (meanProduction), .groups = 'drop')
+par (mfrow = c (1, 1))
+par (mar = c (3, 5, 1, 1))
+plot (NULL, xlim = c (2005, 2021), ylim = c (0, 4), xlab = '',
+      axes = FALSE, ylab = 'Total production (millions of pounds of syrup)')
+axis (side = 2, las = 1)
+axis (side = 1)
+for (r in regions) {
+  tmp <- productionByRegion %>% filter (region == r)
+  lines (x = tmp$year, y = tmp$meanProduction, lwd = 2, col = regionColours [which (regions == r)])
+}
+legend (y = 4, x = 2004.5, box.lty = 0, 
+        col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
+        legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
+        lwd = 2, bg = 'transparent', cex = 0.6)
 #========================================================================================
 
