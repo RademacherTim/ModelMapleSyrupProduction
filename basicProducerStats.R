@@ -8,6 +8,7 @@
 if (!exists ('production')) source ('matchClimAndProdData.R') 
 if (!existsFunction ('%>%')) library ('tidyverse')
 
+
 # colour palette for the regions 
 #----------------------------------------------------------------------------------------
 regionColours <- c ('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462',
@@ -64,7 +65,7 @@ for (r in regions) {
 legend (y = 16, x = 2015, box.lty = 0, 
         col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
         legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
-        lwd = 2, bg = 'transparent', cex = 0.4)
+        lwd = 2, bg = 'transparent', cex = 0.5)
 par (mar = c (3, 5, 0, 1))
 plot (NULL, xlim = c (2005, 2021), ylim = c (0, 8.5), xlab = '', ylab = '',
       axes = FALSE)
@@ -98,21 +99,41 @@ legend (y = 56, x = 2004.5, box.lty = 0,
 # Mean production by region over time
 #----------------------------------------------------------------------------------------
 productionByRegion <- productionSub %>% group_by (region, year) %>% 
-  summarise (meanProduction = mean (meanProduction, na.rm = TRUE), 
-             sdProduction = sd (meanProduction), .groups = 'drop')
+  summarise (sdProduction = sd (meanProduction, na.rm = TRUE), 
+             meanProduction = mean (meanProduction, na.rm = TRUE), 
+             .groups = 'drop')
 par (mfrow = c (1, 1))
 par (mar = c (3, 5, 1, 1))
-plot (NULL, xlim = c (2005, 2021), ylim = c (0, 4), xlab = '',
-      axes = FALSE, ylab = 'Total production (millions of pounds of syrup)')
+plot (NULL, xlim = c (2005, 2021), ylim = c (0, 5), xlab = '',
+      axes = FALSE, ylab = 'Mean production (pounds of syrup per tap)')
 axis (side = 2, las = 1)
 axis (side = 1)
 for (r in regions) {
   tmp <- productionByRegion %>% filter (region == r)
+  polygon (x = c (2005:2021, 2021:2005),
+           y = c (tmp$meanProduction - tmp$sdProduction, 
+                  rev (tmp$meanProduction + tmp$sdProduction)),
+           col = addAlpha (regionColours  [which (regions == r)], 95), 
+           lty = 0)
   lines (x = tmp$year, y = tmp$meanProduction, lwd = 2, col = regionColours [which (regions == r)])
 }
-legend (y = 4, x = 2004.5, box.lty = 0, 
-        col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
-        legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
+globalProduction <- productionSub %>% group_by (year) %>% 
+  summarise (sdProduction = sd (meanProduction, na.rm = TRUE), 
+             meanProduction = mean (meanProduction, na.rm = TRUE), 
+             .groups = 'drop')
+# polygon (x = c (2005:2021, 2021:2005),
+#          y = c (globalProduction$meanProduction - globalProduction$sdProduction, 
+#                 rev (globalProduction$meanProduction + globalProduction$sdProduction)),
+#          col = addAlpha ('#999999', 95), 
+#          lty = 0)
+lines (x = 2005:2021, globalProduction$meanProduction, lwd = 4, col = '#999999')
+legend (y = 5, x = 2004.5, box.lty = 0, 
+        col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1)], 
+        legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1)], lty = 1, 
         lwd = 2, bg = 'transparent', cex = 0.6)
+
+# Plot number of taps per producer by region over time
+#----------------------------------------------------------------------------------------
+
 #========================================================================================
 

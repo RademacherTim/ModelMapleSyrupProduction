@@ -57,6 +57,9 @@ production [which (is.infinite (production$meanProduction)), ]
 # I assume the number of taps was simply not reported and set it to NA in the following.
 # NB - I could investigate the imputation of those numbers
 production$meanProduction [which (is.infinite (production$meanProduction))] <- NA
+production [which (production$totalProduction == 0), ]
+# 6422 instances of no total production, which need to be removed to avoid bias in region means
+production$meanProduction [which (production$totalProduction == 0)] <- NA
 
 # get some basic statistics and plots
 #----------------------------------------------------------------------------------------
