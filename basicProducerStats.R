@@ -25,16 +25,17 @@ dim (production) [1] - dim (productionSub) [1]
 producersByRegion <- productionSub %>% count (region, year)
 regions <- unique (producersByRegion$region) [which (!is.na (unique (producersByRegion$region)))]
 max (producersByRegion$n)
+png (file = '../fig/numberOfProducersByRegionOverTime.png', width = 700, height = 400)
 par (mfrow = c (2, 1))
 par (mar = c (0, 5, 1, 1))
-plot (NULL, xlim = c (2005, 2021), ylim = c (2300, 3400), xlab = '', ylab = '',
+plot (NULL, xlim = c (2005, 2021), ylim = c (2200, 3300), xlab = '', ylab = '',
       axes = FALSE)
 axis (side = 2, las = 1)
 for (r in regions) {
   tmp <- producersByRegion %>% filter (region == r)
   lines (x = tmp$year, y = tmp$n, lwd = 2, col = regionColours [which (regions == r)])
 }
-legend (y = 3100, x = 2015, box.lty = 0, 
+legend (y = 3000, x = 2015, box.lty = 0, 
         col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
         legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
         lwd = 2, bg = 'transparent', cex = 0.6)
@@ -48,11 +49,13 @@ for (r in regions) {
   lines (x = tmp$year, y = tmp$n, lwd = 2, col = regionColours [which (regions == r)])
 }
 mtext (side = 2, line = 3.5, at = 1200, text = 'Number of producers')
+dev.off ()
 
 # Plot number of taps by region
 #----------------------------------------------------------------------------------------
 tapsByRegion <- productionSub %>% group_by (region, year) %>% 
   summarise (nTaps = sum (numberOfTaps), .groups = 'drop')
+png (file = '../fig/numberOfTapsByRegionOverTime.png', width = 700, height = 400)
 par (mfrow = c (2, 1))
 par (mar = c (0, 5, 1, 1))
 plot (NULL, xlim = c (2005, 2021), ylim = c (12, 18), xlab = '', ylab = '',
@@ -62,7 +65,7 @@ for (r in regions) {
   tmp <- tapsByRegion %>% filter (region == r)
   lines (x = tmp$year, y = tmp$nTaps / 1e6, lwd = 2, col = regionColours [which (regions == r)])
 }
-legend (y = 16, x = 2015, box.lty = 0, 
+legend (y = 15.5, x = 2015, box.lty = 0, 
         col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
         legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
         lwd = 2, bg = 'transparent', cex = 0.5)
@@ -76,11 +79,13 @@ for (r in regions) {
   lines (x = tmp$year, y = tmp$nTaps / 1e6, lwd = 2, col = regionColours [which (regions == r)])
 }
 mtext (side = 2, line = 3.5, at = 9, text = 'Number of taps (millions)')
+dev.off ()
 
 # Total production by region over time
 #----------------------------------------------------------------------------------------
 productionByRegion <- productionSub %>% group_by (region, year) %>% 
   summarise (totalProduction = sum (totalProduction), .groups = 'drop')
+png (file = '../fig/totalProductionByRegionOverTime.png', width = 700, height = 400)
 par (mfrow = c (1, 1))
 par (mar = c (3, 5, 1, 1))
 plot (NULL, xlim = c (2005, 2021), ylim = c (0, 54), xlab = '',
@@ -91,10 +96,11 @@ for (r in regions) {
   tmp <- productionByRegion %>% filter (region == r)
   lines (x = tmp$year, y = tmp$totalProduction / 1e6, lwd = 2, col = regionColours [which (regions == r)])
 }
-legend (y = 56, x = 2004.5, box.lty = 0, 
+legend (y = 52, x = 2004.5, box.lty = 0, 
         col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
         legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
-        lwd = 2, bg = 'transparent', cex = 0.6)
+        lwd = 2, bg = 'transparent', cex = 0.7)
+dev.off ()
 
 # Mean production by region over time
 #----------------------------------------------------------------------------------------
@@ -102,6 +108,7 @@ productionByRegion <- productionSub %>% group_by (region, year) %>%
   summarise (sdProduction = sd (meanProduction, na.rm = TRUE), 
              meanProduction = mean (meanProduction, na.rm = TRUE), 
              .groups = 'drop')
+png (file = '../fig/meanProductionByRegionOverTime.png', width = 700, height = 400)
 par (mfrow = c (1, 1))
 par (mar = c (3, 5, 1, 1))
 plot (NULL, xlim = c (2005, 2021), ylim = c (0, 5), xlab = '',
@@ -131,16 +138,18 @@ legend (y = 5, x = 2004.5, box.lty = 0,
         col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1)], 
         legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1)], lty = 1, 
         lwd = 2, bg = 'transparent', cex = 0.6)
+dev.off ()
 
 # Plot number of taps per producer by region over time
 #----------------------------------------------------------------------------------------
 tapsByRegion <- productionSub %>% group_by (region, year) %>% 
   summarise (nTaps = mean (numberOfTaps, na.rm = TRUE) / 1e3, 
              n = n_distinct (uniqueID),
-             seTaps = (sd (numberOfTaps, na.rm = TRUE) / n) / 1e3, .groups = 'drop')
+             seTaps = (sd (numberOfTaps, na.rm = TRUE) / sqrt (n)) / 1e3, .groups = 'drop')
+png (file = '../fig/numberOfTapsPerProducerByRegionOverTime.png', width = 700, height = 400)
 par (mfrow = c (1, 1))
 par (mar = c (3, 5, 1, 1))
-plot (NULL, xlim = c (2005, 2021), ylim = c (0, 30), xlab = '', ylab = '',
+plot (NULL, xlim = c (2005, 2021), ylim = c (0, 35), xlab = '', ylab = '',
       axes = FALSE)
 axis (side = 1)
 axis (side = 2, las = 1)
@@ -155,11 +164,17 @@ for (r in regions) {
   }
   lines (x = tmp$year, y = tmp$nTaps, lwd = 2, col = regionColours [which (regions == r)])
 }
-legend (y = 31, x = 2005, box.lty = 0, 
+globalTaps <- productionSub %>% group_by (year) %>% 
+  summarise (nTaps = mean (numberOfTaps, na.rm = TRUE) / 1e3, 
+             n = n_distinct (uniqueID),
+             seTaps = (sd (numberOfTaps, na.rm = TRUE) / sqrt (n)) / 1e3, .groups = 'drop')
+#lines (x = 2005:2021, globalTaps$nTaps, lwd = 3, col = '#999999')
+legend (y = 35, x = 2005, box.lty = 0, 
         col = regionColours [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], 
         legend = regions [c (5, 6, 4, 2, 11, 3, 8, 9, 10, 7, 12, 1, 13)], lty = 1, 
-        lwd = 2, bg = 'transparent', cex = 0.5)
+        lwd = 2, bg = 'transparent', cex = 0.6)
 mtext (side = 2, line = 3.5, text = 'Number of taps per producers (thousands)')
+dev.off ()
 
 # Make map of all producers
 #----------------------------------------------------------------------------------------
