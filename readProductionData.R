@@ -80,6 +80,8 @@ dev.off ()
 sum (production$numberOfTaps == 0)
 # 788 instances of no tapping at all
 # 0 instances of negative number of taps 
+# remove the instances of no reported tapping
+production <- production [-which (production$numberOfTaps == 0), ]
 
 # how many people reported less than 100 taps?
 sum (production$numberOfTaps < 100)
@@ -89,6 +91,8 @@ sum (production$numberOfTaps < 100)
 sum (production$totalProduction == 0)
 # 6422 instances of no production
 # 0 instances of negative total production
+# remove instances of no production sold to PPAQ
+production <- production [-which (production$totalProduction == 0), ]
 
 # plot number of taps to get an idea of company size
 png ('../fig/numberOfTapsPerProducers.png', width = 700, height = 400)

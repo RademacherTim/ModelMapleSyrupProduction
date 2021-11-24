@@ -85,4 +85,7 @@ dirString <- '/Volumes/TREE LAB001/data/climate/princeton/'
 dates <- seq (from = as_date ('1948-01-01'), 
               to   = as_date ('2016-12-31'), by = 1)
 
+# need to actually match the production and climate data
+#-------------------------------------------------------------------------------
+
 #========================================================================================
