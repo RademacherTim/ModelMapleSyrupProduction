@@ -43,8 +43,8 @@ SSep <- substr (muniCoord$latitude, 11, 11) [1]
 #----------------------------------------------------------------------------------------
 muniCoord$lat <- as.numeric (char2dms (from = muniCoord$latitude, 
                                        chd = DSep, chm = MSep, chs = SSep))
-muniCoord$lon <- as.numeric (char2dms (from = muniCoord$longitude, 
-                                       chd = DSep, chm = MSep, chs = SSep))
+muniCoord$lon <- -as.numeric (char2dms (from = muniCoord$longitude, 
+                                        chd = DSep, chm = MSep, chs = SSep))
 
 # loop over production data to get coordinates of municipality
 #----------------------------------------------------------------------------------------
