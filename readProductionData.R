@@ -94,6 +94,12 @@ sum (production$totalProduction == 0)
 # remove instances of no production sold to PPAQ
 production <- production [-which (production$totalProduction == 0), ]
 
+# create a new column with production in liters 
+# Unit conversions according to MAPAQ (26th of November): https://www.mapaq.gouv.qc.ca/fr/Publications/Unitesconversion.pdf
+# Duchesne et Houle (2014) used 344 ml of syrup per pound from a government report of Canada called "Canadian Maple Products Situation and Trends 2006-2007"
+production$totalP <- production$totalProduction * 0.3431532 
+production$meanP <- production$meanProduction * 0.3431532
+
 # plot number of taps to get an idea of company size
 png ('../fig/numberOfTapsPerProducers.png', width = 700, height = 400)
 par (mar = c (5, 5, 1, 1))
