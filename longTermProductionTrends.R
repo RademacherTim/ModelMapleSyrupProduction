@@ -16,7 +16,7 @@ gal2L <- 4.54609
 USgal2L <- 3.78532
 
 # read csv file with production data in gallons
-# 
+#  
 #----------------------------------------------------------------------------------------
 dataCanada <- read_csv ('../data/statisticsCanada/32100354.csv',
                         col_types = c ('dccccicddcdcc'),
@@ -24,6 +24,11 @@ dataCanada <- read_csv ('../data/statisticsCanada/32100354.csv',
                           "REF_DATE","GEO","DGUID","Description","UOM","UOM_ID",
                           "SCALAR_FACTOR","SCALAR_ID","VECTOR","COORDINATE","VALUE",
                           "STATUS","SYMBOL","TERMINATED","DECIMALS"), skip = 1)
+
+# select only values of total production
+#----------------------------------------------------------------------------------------
+dataCanada <-  dataCanada %>% 
+  dplyr::filter (substr (Description, 1, 5) == 'Maple') 
 
 # read csv file for the USA data from the USDA-NASS 
 # Downloaded from quickstats on the 30th Nov 2021: https://quickstats.nass.usda.gov/results/2481633A-9543-33D2-A9FE-990FC20E5462 
@@ -36,11 +41,6 @@ dataUSA <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv
   arrange (Year) %>%
   filter (Value != '(D)') %>% # filter out all lines without values
   mutate (V = as.numeric (gsub (',','', Value)) * USgal2L) # convert Value to actual number
-
-# select only values of total production
-#----------------------------------------------------------------------------------------
-dataCanada <-  dataCanada %>% 
-  dplyr::filter (substr (Description, 1, 5) == 'Maple') 
 
 # plot time series for total maple syrup production of Canada, the USA and Québec
 #----------------------------------------------------------------------------------------
@@ -211,3 +211,49 @@ legend (1995, 6,
         col = colUSA, 
         box.lty = 0, lty = 1, lwd = 2, cex = 0.9, bg = 'transparent')
 dev.off ()
+
+# below is all to plot the approximate price of maple syrup over time
+#----------------------------------------------------------------------------------------
+
+# read historic currency exchange rates from Statistics Canada
+# downloaded from https://www150.statcan.gc.ca/t1/tbl1/en/cv.action?pid=1010000901 on the 
+# 1st of December 2021
+#----------------------------------------------------------------------------------------
+USD2CAD <- read_csv (file = '../data/statisticsCanada/1010000901-eng.csv', skip = 9, 
+                     col_types = 'cddddddd') [2, ] %>% # only working with the "noon spot rate, average" for now
+  pivot_longer (cols = 2:800,
+                names_to = c ('month', 'year'),
+                names_sep = ' ', 
+                values_to = 'rate') %>% group_by (year) %>%
+  summarise (meanRate = mean (rate))
+
+# read csv file with production data in gallons
+# 
+#----------------------------------------------------------------------------------------
+dataCanada <- read_csv ('../data/statisticsCanada/32100354.csv',
+                        col_types = c ('dccccicddcdcc'),
+                        col_names = c (
+                          "REF_DATE","GEO","DGUID","Description","UOM","UOM_ID",
+                          "SCALAR_FACTOR","SCALAR_ID","VECTOR","COORDINATE","VALUE",
+                          "STATUS","SYMBOL","TERMINATED","DECIMALS"), skip = 1)
+
+# select only gross and total production to plot the average value (aka price)
+#----------------------------------------------------------------------------------------
+dataCanada <-  dataCanada %>% 
+  dplyr::filter (substr (Description, 1, 5) == 'Maple') 
+
+dataUSA <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv',
+                     col_types = cols ()) %>%
+  select (-c (4, 8:15)) %>%
+  filter (`Data Item` == 'MAPLE SYRUP - PRICE RECEIVED, MEASURED IN $ / GALLON') %>% 
+  group_by (State) %>%
+  arrange (Year) %>%
+  filter (Value != '(D)') %>% 
+  mutate (V = as.numeric (Value) / USgal2L)
+
+plot (x = dataUSA$Year [dataUSA$State == 'CONNECTICUT'], 
+      y = dataUSA$V  [dataUSA$State == 'CONNECTICUT'], typ = 'l',
+      xlim = c (1990, 2021), ylim = c (0, 30), axes = FALSE,
+      ylab = 'Price (Canadian-$ per liter)')
+axis (side = 1)
+axis (side = 2, las = 1)
