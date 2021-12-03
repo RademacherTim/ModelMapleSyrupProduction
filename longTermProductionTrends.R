@@ -340,3 +340,49 @@ polygon (x = c (tmp2$Year, rev (tmp2$Year)),
 lines (x = tmp2$Year,
        y = tmp2$meanPrice, col = colours [3], lwd = 2)
 dev.off ()
+
+# make plot of the start and end dates of the USA sugaring season over time
+#----------------------------------------------------------------------------------------
+minStart <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv',
+                       col_types = cols ()) %>%
+  select (-c (4, 8:15)) %>%
+  filter (`Data Item` == 'MAPLE SYRUP, HARVEST - START DATE, MIN, MEASURED IN JULIAN DATE') %>%
+  mutate (V = as.numeric (Value)) %>%
+  select (Year, State, V) %>% group_by (Year) %>% 
+  summarise (V = mean (V), .groups = 'drop')
+meanStart <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv',
+                     col_types = cols ()) %>%
+  select (-c (4, 8:15)) %>%
+  filter (`Data Item` == 'MAPLE SYRUP, HARVEST - START DATE, AVG, MEASURED IN JULIAN DATE') %>%
+  mutate (V = as.numeric (Value)) %>%
+  select (Year, State, V) %>% group_by (Year) %>% 
+  summarise (V = mean (V), .groups = 'drop')
+meanEnd <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv',
+                       col_types = cols ()) %>%
+  select (-c (4, 8:15)) %>%
+  filter (`Data Item` == 'MAPLE SYRUP, HARVEST - END DATE, AVG, MEASURED IN JULIAN DATE') %>%
+  mutate (V = as.numeric (Value)) %>%
+  select (Year, State, V) %>% group_by (Year) %>% 
+  summarise (V = mean (V), .groups = 'drop')
+maxEnd <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv',
+                     col_types = cols ()) %>%
+  select (-c (4, 8:15)) %>%
+  filter (`Data Item` == 'MAPLE SYRUP, HARVEST - END DATE, MAX, MEASURED IN JULIAN DATE') %>%
+  mutate (V = as.numeric (Value)) %>%
+  select (Year, State, V) %>% group_by (Year) %>% 
+  summarise (V = mean (V), .groups = 'drop')
+
+# plot season dates
+#----------------------------------------------------------------------------------------
+png (file = '../fig/sugaringSeasonDatesUSA.png')
+par (mar = c (3, 5, 1, 1))
+plot (x = minStart$Year,
+      y = minStart$V, typ = 'l', axes = FALSE, 
+      xlim = c (2013, 2021), ylim = c (0, 140), col = '#F9D99F', lwd = 2, lty = 2,
+      ylab = 'Day of year')
+axis (side = 1, at = seq (2013, 2021, by = 2))
+axis (side = 2, las = 1)
+lines (x = meanStart$Year, y = meanStart$V, col = '#ED9648', lwd = 2) # Amber
+lines (x = meanEnd$Year, y = meanEnd$V, col = '#BE5536', lwd = 2) # Dark 
+lines (x = maxEnd$Year, y = maxEnd$V, col = '#BE5536', lwd = 2, lty = 2) # Very dark
+dev.off ()
