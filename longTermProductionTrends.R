@@ -5,6 +5,10 @@
 if (!existsFunction ('read_csv'))    library ('tidyverse')
 if (!existsFunction ('weightedSd')) (library ('matrixStats'))
 
+# define some fun colours and a function to add opacity to a colour
+#----------------------------------------------------------------------------------------
+colours <- c ('#CC7240','#94452E','#B8AB9E')
+
 # colours for USA states
 #----------------------------------------------------------------------------------------
 colUSA <- c ('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de69','#fccde5',
@@ -15,6 +19,14 @@ colUSA <- c ('#8dd3c7','#ffffb3','#bebada','#fb8072','#80b1d3','#fdb462','#b3de6
 #----------------------------------------------------------------------------------------
 gal2L <- 4.54609
 USgal2L <- 3.78532
+# According to the MAPAQ 4 liters of syrup are equivalent to 11.6566 pounds, thus
+pou2L <- 4 / 11.6566
+
+# convert annual production
+#----------------------------------------------------------------------------------------
+annualP <- production %>% group_by (year) %>% 
+  summarise (totalP = sum (totalProduction)) %>% 
+  mutate (totalP = totalP * pou2L)
 
 # read csv file with production data in gallons
 #  
@@ -47,16 +59,18 @@ dataUSA <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv
 #----------------------------------------------------------------------------------------
 png (file = '../fig/longTermNationalProductionTrends.png', width = 750, height = 400)
 par (mar = c (3, 5, 1, 1))
-plot (x = dataCanada$REF_DATE [dataCanada$GEO == 'Canada'],
-      y = dataCanada$VALUE [dataCanada$GEO == 'Canada'] * gal2L / 1e3, typ = 'l', 
+plot (x = annualP$year, y = annualP$totalP / 1e6, typ = 'l', 
       axes = 'FALSE', xlab = '', ylab = 'Maple syrup production (million liters)', 
-      xlim = c (1920, 2025), ylim = c (0, 63), col = colours [3], lwd = 2)
+      xlim = c (1920, 2025), ylim = c (0, 63), col = colours [1], lty = 2, lwd = 2)
 axis (side = 1, at = seq (1920, 2020, by = 10))
 axis (side = 2, las = 1)
-abline (v = 1989.92, col = colours [1])
 lines (x = dataCanada$REF_DATE [dataCanada$GEO == 'Quebec'],
        y = dataCanada$VALUE [dataCanada$GEO == 'Quebec'] * gal2L / 1e3,
        col = '#003399', lwd = 2)
+abline (v = 1989.92, col = colours [1])
+lines (x = dataCanada$REF_DATE [dataCanada$GEO == 'Canada'],
+       y = dataCanada$VALUE [dataCanada$GEO == 'Canada'] * gal2L / 1e3,
+       col = colours [3], lwd = 2)
 lines (x = dataCanada$REF_DATE [dataCanada$GEO == 'Ontario'],
        y = dataCanada$VALUE [dataCanada$GEO == 'Ontario'] * gal2L / 1e3,
        col = '#D00C27', lwd = 2)
@@ -70,15 +84,6 @@ USAprod <- dataUSA %>% group_by (Year) %>% summarise (totalProd = sum (V) / 1e6)
 lines (x = USAprod$Year,
        y = USAprod$totalProd,
        col = '#666666', lwd = 2)
-
-# add lines for PPAQ data
-#----------------------------------------------------------------------------------------
-# According to the MAPAQ 4 liters of syrup are equivalent to 11.6566 pounds, thus
-pou2L <- 4 / 11.6566
-annualP <- production %>% group_by (year) %>% 
-  summarise (totalP = sum (totalProduction), .groups = 'drop') %>%
-  mutate (totalP = totalP * pou2L)
-lines (x = annualP$year, y = annualP$totalP / 1e6, lty = 2, col = colours [1], lwd = 2)
 
 # add legend 
 #----------------------------------------------------------------------------------------
@@ -374,7 +379,7 @@ maxEnd <- read_csv ('../data/USDA_NASS/594BB147-48D2-3BAE-B349-1A7F4FFED981.csv'
 
 # plot season dates
 #----------------------------------------------------------------------------------------
-png (file = '../fig/sugaringSeasonDatesUSA.png')
+png (file = '../fig/sugaringSeasonDatesUSA.png', width = 750, height = 400)
 par (mar = c (3, 5, 1, 1))
 plot (x = minStart$Year,
       y = minStart$V, typ = 'l', axes = FALSE, 
