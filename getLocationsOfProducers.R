@@ -4,8 +4,8 @@
 
 # load dependencies
 #----------------------------------------------------------------------------------------
-if (!exists ('production')) source ('readProductionData.R')
-if (!existsFunction ('dms2char')) library ('sp')
+if (!exists ("production")) source ("readProductionData.R")
+if (!existsFunction ("dms2char")) library ("sp")
 
 # list of unique municipalities with producers
 #----------------------------------------------------------------------------------------

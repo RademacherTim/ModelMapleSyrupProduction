@@ -7,6 +7,7 @@
 #----------------------------------------------------------------------------------------
 # - add 2004 to the weather simulation to include previous year variables
 # - improve temporal associations with actually biological processes
+# - add administrative region to the metData and climData tibbles
 
 # load dependencies
 #----------------------------------------------------------------------------------------

@@ -1,16 +1,14 @@
 #========================================================================================
 # Script to match maple syrup producer data with climate data 
 #
-# Questions:
-# - TR Generally works but need to figure out what is going on with multiple matches
-# - TR Need to integrate region into the matching 
-# - TR Need to deal with cases when there are two municipalities with the same name in the same region
+# To-do list:
 #----------------------------------------------------------------------------------------
 
 # source dependencies
 #----------------------------------------------------------------------------------------
 if (!exists ('production')) source ('readProductionData.R')
 if (!existsFunction ('dms2char')) library ('sp')
+if (!exists ("climData")) source ("calculateClimaticVariables.R")
 
 # read file with locations of the municipalities from données Québec
 # downloaded from https://statistique.quebec.ca/pls/hcp/hcp225_fichr_seqnt.hcp225_f1?pvcLangue=fr
@@ -55,65 +53,89 @@ for (r in 1:dim (production) [1]) {
   # check whether this row has already been associated with coordinates
   #--------------------------------------------------------------------------------------
   if (!is.na (production$lat [r])) next 
-  if (is.na (production$municipality [r])) next
-    
-  # get indices of the municipality's coordinates
-  #--------------------------------------------------------------------------------------
-  iName <- grep (pattern = paste0 ("^", production$municipality [r], "$"), 
-                 x = muniCoord$name)
-  iRegion <- grep (pattern = paste0 ("^",production$region [r], "$"),
-                   x = muniCoord$region)
-  #i <- iRegion [which (iName == iRegion)]
   
-  if (length (iName) >= 2) {
-    print (paste (iName, production$municipality [r], 
-                  production$region [r], muniCoord$municipalStatus [iName]))
-    if ('R' %in% muniCoord$municipalStatus [iName]) {
+  # jump rows that do not have a name for municipality or region
+  #--------------------------------------------------------------------------------------
+  if (is.na (production$municipality [r]) | is.na (production$region [r])) next
+    
+  # get indices of the municipality's coordinates for the right name and region
+  #--------------------------------------------------------------------------------------
+  i <- grep (pattern = paste0 ("^", production$municipality [r], " ", production$region [r], "$"), 
+             x = paste (muniCoord$name, muniCoord$region))
+  
+  # check whether the name exists twice or more often in the region
+  #--------------------------------------------------------------------------------------
+  if (length (i) >= 2) {
+    # following deals with the exceptions of Cacouna, Bas-Saint-Laurent ("M" and "R")
+    if ('R' %in% muniCoord$municipalStatus [i]) {
       i <- which (production$municipality [r] == muniCoord$name &
-                    production$region [r] == muniCoord$region &
-                    muniCoord$municipalStatus != "R")
+                  production$region [r] == muniCoord$region &
+                  muniCoord$municipalStatus != "R")
+    # following deals with the exceptions of:
+    # - Notre-Dame-du-Bon-Conseil, Centre-du-Québec ("VL" and "P")
+    # - Plessisville, Centre-du-Québec ("V" and "P")
+    # - Disraeli, Chaudière-Appalaches ("V" and "P")
     } else if ('P' %in% muniCoord$municipalStatus [i]) {
-      i <- which (listOfMunicipalities$municipality [r] == muniCoord$name &
-                    listOfMunicipalities$region [r] == muniCoord$region &
-                    muniCoord$municipalStatus == "P")
+      i <- which (production$municipality [r] == muniCoord$name &
+                  production$region [r] == muniCoord$region &
+                  muniCoord$municipalStatus == "P")
+    # following deals with the exceptions of:
+    # - Notre-Dame-du-Bon-Conseil, Centre-du-Québec ("VL" and "P"), already dealt with in previous
+    # - Saint-Célestin, Centre-du-Québec ("VL" and "M")
+    # - Hemmingford, Montérégie ("CT" and "VL")
     } else if ('VL' %in% muniCoord$municipalStatus [i]) {
-      i <- which (listOfMunicipalities$municipality [r] == muniCoord$name &
-                    listOfMunicipalities$region [r] == muniCoord$region &
-                    muniCoord$municipalStatus != "VL")
+      i <- which (production$municipality [r] == muniCoord$name &
+                  production$region [r] == muniCoord$region &
+                  muniCoord$municipalStatus != "VL")
+    # following deals with the exceptions of:
+    # - Bedford, Estrie ("V" and "CT")
+    # - Hatley, Estrie ("M" and "CT")
+    # - Stanstead, Estrie ("V" and "CT")
+    # - Valcourt, Estrie ("V" and "CT")
+    # - Hemmingford, Montérégie ("CT" and "VL"), already dealt with in the previous
     } else if ('CT' %in% muniCoord$municipalStatus [i]) {
-      i <- which (listOfMunicipalities$municipality [r] == muniCoord$name &
-                    listOfMunicipalities$region [r] == muniCoord$region &
-                    muniCoord$municipalStatus == "CT")
+      i <- which (production$municipality [r] == muniCoord$name &
+                  production$region [r] == muniCoord$region &
+                  muniCoord$municipalStatus == "CT")
+      #print (paste (r, production$municipality [r], production$region [r]))
+      #print (muniCoord$municipalStatus [i])
     }
   }
   
   # associate municipality's latitude and longitude with producer
   #--------------------------------------------------------------------------------------
   if (length (i) == 1) {
-    production$lat [which (production$municipality == production$municipality [r])] <- 
-      muniCoord$lat [i]
-    production$lon [which (production$municipality == production$municipality [r])] <- 
-      muniCoord$lon [i]
+    condition <- which (production$municipality == production$municipality [r] &
+                        production$region == production$region [r])
+    production$lat [condition] <- muniCoord$lat [i]
+    production$lon [condition] <- muniCoord$lon [i]
   } else {
-    print (paste ("Row: ",r ," Municipality: ", production$municipality [r], 
-                  " Region: ",production$region [r], " Indices: ",iName, sep = ''))
+    stop ("Error")
+    #print (paste (r, production$municipality [r], production$region [r], sep = ''))
   }
 }
 
-# initialise spatial resolution for climate data
+# temporary clean index variables
 #-------------------------------------------------------------------------------
-res <- 0.25
+rm (r, i)
 
-# directory name with climate data
+# add climate data to the production tibble for each site
 #-------------------------------------------------------------------------------
-dirString <- '/Volumes/TREE LAB001/data/climate/princeton/'
-
-# initial possible climates for climate data 
-#-------------------------------------------------------------------------------
-dates <- seq (from = as_date ('1948-01-01'), 
-              to   = as_date ('2016-12-31'), by = 1)
-
-# need to actually match the production and climate data
-#-------------------------------------------------------------------------------
+production$FT <- NA; production$maxCFT <- NA
+production$tmean <- NA; production$tmJJA <- NA; production$tmJFM <- NA
+production$prec <- NA; production$snow <- NA
+for (s in 1:dim (climData) [1]) {
+  
+  # get indices of production sites for this municipality and year
+  #-----------------------------------------------------------------------------
+  i <- which (round (production$lat, 4) == round (climData$Latitude [s], 4) &
+              round (production$lon, 4) == round (climData$Longitude [s], 4) & 
+              production$municipality == climData$Name [s] &
+              production$year == climData$Year [s])
+  
+  # associate annual climate and production data
+  #-----------------------------------------------------------------------------
+  production [i, 15:dim (production) [2]] <- climData [s, 6:dim (climData) [2]]
+}
 
 #========================================================================================
