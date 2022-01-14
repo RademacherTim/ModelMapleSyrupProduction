@@ -2,9 +2,9 @@
 # Script to match maple syrup producer data with climate data 
 #
 # Questions:
-# - Generally works but need to figure out what is going on with multiple matches
-# - Need to integrate region into the matching 
-# - Need to deal with cases when there are two municipalities with the same name in the same region
+# - TR Generally works but need to figure out what is going on with multiple matches
+# - TR Need to integrate region into the matching 
+# - TR Need to deal with cases when there are two municipalities with the same name in the same region
 #----------------------------------------------------------------------------------------
 
 # source dependencies
@@ -51,24 +51,52 @@ muniCoord$lon <- -as.numeric (char2dms (from = muniCoord$longitude,
 production$lat <- NA
 production$lon <- NA
 for (r in 1:dim (production) [1]) {
+  
   # check whether this row has already been associated with coordinates
   #--------------------------------------------------------------------------------------
   if (!is.na (production$lat [r])) next 
+  if (is.na (production$municipality [r])) next
     
   # get indices of the municipality's coordinates
   #--------------------------------------------------------------------------------------
-  indices <- grep (pattern = production$municipality [r], 
-                   x = muniCoord$name, ignore.case = TRUE)
+  iName <- grep (pattern = paste0 ("^", production$municipality [r], "$"), 
+                 x = muniCoord$name)
+  iRegion <- grep (pattern = paste0 ("^",production$region [r], "$"),
+                   x = muniCoord$region)
+  #i <- iRegion [which (iName == iRegion)]
+  
+  if (length (iName) >= 2) {
+    print (paste (iName, production$municipality [r], 
+                  production$region [r], muniCoord$municipalStatus [iName]))
+    if ('R' %in% muniCoord$municipalStatus [iName]) {
+      i <- which (production$municipality [r] == muniCoord$name &
+                    production$region [r] == muniCoord$region &
+                    muniCoord$municipalStatus != "R")
+    } else if ('P' %in% muniCoord$municipalStatus [i]) {
+      i <- which (listOfMunicipalities$municipality [r] == muniCoord$name &
+                    listOfMunicipalities$region [r] == muniCoord$region &
+                    muniCoord$municipalStatus == "P")
+    } else if ('VL' %in% muniCoord$municipalStatus [i]) {
+      i <- which (listOfMunicipalities$municipality [r] == muniCoord$name &
+                    listOfMunicipalities$region [r] == muniCoord$region &
+                    muniCoord$municipalStatus != "VL")
+    } else if ('CT' %in% muniCoord$municipalStatus [i]) {
+      i <- which (listOfMunicipalities$municipality [r] == muniCoord$name &
+                    listOfMunicipalities$region [r] == muniCoord$region &
+                    muniCoord$municipalStatus == "CT")
+    }
+  }
   
   # associate municipality's latitude and longitude with producer
   #--------------------------------------------------------------------------------------
-  if (length (indices) != 0) {
+  if (length (i) == 1) {
     production$lat [which (production$municipality == production$municipality [r])] <- 
-      muniCoord$lat [indices]
+      muniCoord$lat [i]
     production$lon [which (production$municipality == production$municipality [r])] <- 
-      muniCoord$lon [indices]
+      muniCoord$lon [i]
   } else {
-    print (paste ('Row: ',r,' Municipality: ', production$municipality [r]), sep = '')
+    print (paste ("Row: ",r ," Municipality: ", production$municipality [r], 
+                  " Region: ",production$region [r], " Indices: ",iName, sep = ''))
   }
 }
 

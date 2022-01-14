@@ -27,8 +27,8 @@ nLines2 <- 18250
 
 # ascribe names 
 #----------------------------------------------------------------------------------------
-colNames <- c ("KeyID","Name","Latitude","Longitude","Elevation","State","Country","P",
-               "Replication","Year","Month","Day","Minimum Air Temperature",
+colNames <- c ("KeyID","Name","Latitude","Longitude","Elevation","Region","State",
+               "Country","P","Replication","Year","Month","Day","Minimum Air Temperature",
                "Air Temperature","Maximum Air Temperature","Total Precipitation",
                "Relative Humidity","Wind Speed at 10 meters","Wind Direction",
                "Solar Radiation","Atmospheric Pressure","Snow Precipitation",
@@ -40,15 +40,15 @@ options (warn = 2)
 
 # loop over each site
 #----------------------------------------------------------------------------------------
-for (s in 1:length (unique (municipalities$Name))) {
+for (s in 1:length (municipalities$Name)) {
   
   # read 2005 to 2020 data
   temp1 <- read_csv (file = "../data/Export (WeatherGeneration2005-2020).csv", 
                      col_names = colNames,
-                     col_types = 'icdddcciiiiidddddddddddd',
+                     col_types = 'icdddccciiiiidddddddddddd',
                      skip = ifelse (s == 1, 1, (s-1) * nLines1 + 1),
                      n_max = nLines1) %>% 
-    select (-c (KeyID, State, Country, P))
+    select (-c (KeyID, State, Country, P)) 
   
   # average over replications
   temp1 <- temp1 %>% 
@@ -70,7 +70,7 @@ for (s in 1:length (unique (municipalities$Name))) {
   # read 2021 climate data
   temp2 <- read_csv (file = "../data/Export (WeatherGeneration2021).csv", 
                      col_names = colNames,
-                     col_types = 'icdddcciiiiidddddddddddd',
+                     col_types = 'icdddccciiiiidddddddddddd',
                      skip = ifelse (s == 1, 1, (s-1) * nLines2 + 1),
                      n_max = nLines2) %>%
     select (-c (KeyID, State, Country, P))
@@ -105,6 +105,6 @@ for (s in 1:length (unique (municipalities$Name))) {
 
 # write csv file with mean daily climate data
 write_csv (tmp, file = "../data/siteClimate.csv")
-# 633 municipalities * (365 days per year * 13 years + 366 days per year * 4 years) = 
-# 633 * (4745 + 1464) = 633 * 6209 = 3 930 297 lines
+# 643 municipalities * (365 days per year * 13 years + 366 days per year * 4 years) = 
+# 643 * (4745 + 1464) = 643 * 6209 = 3 992 387 lines
 #========================================================================================
