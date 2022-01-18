@@ -13,17 +13,17 @@ municipalities <- read_csv ("../data/producerLocations.csv", col_types = cols ()
 
 # read original output file from BioSIM 11 with 50 replications per site
 #----------------------------------------------------------------------------------------
-# 2005-2021 had four leap years (i.e., 2008, 2012, 2016, 2020) out of 16 years 
-# hence the average days per year wer 365.25
-# 365.25 days per year * 16 years * 50 replications = 292 200
-# number of lines per site = 292 200
-nLines1 <- 292200
-# 633 sites * 292 200 lines per site = 184 962 600 lines in the file
+# 2004-2021 had five leap years (i.e., 2004, 2008, 2012, 2016, 2020) out of 17 years 
+# hence the average days per year were (365 + 5/17)
+# (365 + 5/17) days per year * 17 years * 50 replications = 310 500
+# number of lines per site = 310 500
+nLines1 <- 310500
+# 643 sites * 310 500 lines per site = 199 651 500 lines in the file
 
 # For the file with only weather for 2021 
 # 365 days per year * 1 year * 50 replications = 18 250
 nLines2 <- 18250
-# 633 site * 18250 lines per site = 11 552 250 lines in the file
+# 643 site * 18250 lines per site = 11 552 250 lines in the file
 
 # ascribe names 
 #----------------------------------------------------------------------------------------
@@ -43,7 +43,7 @@ options (warn = 2)
 for (s in 1:length (municipalities$Name)) {
   
   # read 2005 to 2020 data
-  temp1 <- read_csv (file = "../data/Export (WeatherGeneration2005-2020).csv", 
+  temp1 <- read_csv (file = "../data/Export (WeatherGeneration2004-2020).csv", 
                      col_names = colNames,
                      col_types = 'icdddccciiiiidddddddddddd',
                      skip = ifelse (s == 1, 1, (s-1) * nLines1 + 1),
@@ -105,6 +105,6 @@ for (s in 1:length (municipalities$Name)) {
 
 # write csv file with mean daily climate data
 write_csv (tmp, file = "../data/siteClimate.csv")
-# 643 municipalities * (365 days per year * 13 years + 366 days per year * 4 years) = 
-# 643 * (4745 + 1464) = 643 * 6209 = 3 992 387 lines
+# 643 municipalities * (365 days per year * 13 years + 366 days per year * 5 years) = 
+# 643 * (4745 + 1830) = 643 * 6575 = 4 227 725 lines
 #========================================================================================

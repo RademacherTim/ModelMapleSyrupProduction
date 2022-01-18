@@ -8,6 +8,7 @@
 # - add 2004 to the weather simulation to include previous year variables
 # - improve temporal associations with actually biological processes
 # - add administrative region to the metData and climData tibbles
+# - maxCFT is -Inf at least one instance, which should not be possible (DEBUG)
 
 # load dependencies
 #----------------------------------------------------------------------------------------
@@ -35,10 +36,13 @@ climData <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>
 # calculate the maximum number of consecutive daily freeze-thaw cycles per year  
 #----------------------------------------------------------------------------------------
 metData$cFT <- NA
+time1 <- Sys.time ()
 for (r in 1:dim (metData) [1]) {
   
   # save and reset global counter at end of the year
-  if (metData$Doy [r] < metData$Doy [r - 1]) l <- 0
+  if (r != 1) {
+    if (metData$Doy [r] < metData$Doy [r - 1]) l <- 0
+  }
   
   # increase counter local counter, if day has a freeze thaw cycle
   if (metData$tmin [r] < -1 & metData$tmax [r] > 1) {
@@ -51,6 +55,8 @@ for (r in 1:dim (metData) [1]) {
   # add local counter to the metData
   metData$cFT [r] <- l
 }
+time2 <- Sys.time ()
+time2 - time1
 
 # get the maximum number of consecutive daily freeze-that for each year
 #----------------------------------------------------------------------------------------
