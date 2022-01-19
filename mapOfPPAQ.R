@@ -9,7 +9,12 @@ if (!existsFunction ('ggplot')) library ('ggplot2')
 if (!existsFunction ('map_data')) library ('mapdata') # needed for Canadian borders
 if (!existsFunction ('st_read')) library ('sf')
 if (!existsFunction ('readTIFF')) library ('tiff')
-if (!exists ('production')) source ('matchClimAndProdData.R') 
+if (!exists ('production')) source ('readProductionData.R') 
+
+# get meteorological station locations
+# downloaded from https://open.canada.ca/data/en/dataset/9764d6c6-3044-450c-ac5a-383cedbfef17
+#-------------------------------------------------------------------------------
+read_csv ("../data/swob-xml_station_list.csv")
 
 # get shapefile for red and sugar maple distributions from US Forest service
 #-------------------------------------------------------------------------------
@@ -60,10 +65,12 @@ PPAQmap <- ggplot () +
                 color = "#333333") +  
   geom_polygon (data = canada, aes (x = long, y = lat, group = group), 
                 fill = "white", color = "#333333") +
-  geom_sf (data = disACRU_ll, fill = '#901c3b33', size = 0) +
-  geom_sf (data = disACSH_ll, fill = '#f3bd4833', size = 0) +
+  geom_sf (data = disACRU_ll, fill = '#901c3b33', size = 0) + # TR - change this to contours
+  geom_sf (data = disACSH_ll, fill = '#f3bd4833', size = 0) + # TR - change this to contours
+  # TR - add the Beaudoin map in the background
   xlab ("Longitude") + ylab ("Latitude") +
   ggtitle ('Producteur et productrices acéricole du Québec') +
+  # TR - add the weather stations
   geom_point (data = municipalPPAQ, 
               aes (x = lon, y = lat, size = nClass, fill = '#91b9a4'), 
               fill = '#91b9a466', 

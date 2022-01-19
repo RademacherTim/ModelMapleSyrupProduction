@@ -5,17 +5,19 @@
 
 # to-do list: 
 #----------------------------------------------------------------------------------------
-# - add 2004 to the weather simulation to include previous year variables
 # - improve temporal associations with actually biological processes
 # - add administrative region to the metData and climData tibbles
-# - maxCFT is -Inf at least one instance, which should not be possible (DEBUG)
+# - add snow depth, but an average or max and across which period
+# - add growing degree days
 
 # load dependencies
 #----------------------------------------------------------------------------------------
+if (!existsFunction ("%>%")) library ("tidyverse")
 if (!existsFunction ("read_csv")) library ("readr")
 if (!exists ("metData")) metData <- read_csv ("../data/siteClimate.csv", 
                                               col_types = "cdddiiidddddddddddd")
 if (!existsFunction ("yday")) library ("lubridate")
+if (!existsFunction ("raster")) library ("raster")
 
 # create day of year variable
 #----------------------------------------------------------------------------------------
@@ -54,49 +56,86 @@ for (r in 1:dim (metData) [1]) {
   
   # add local counter to the metData
   metData$cFT [r] <- l
+
+  # give update
+  if (r %% 100000 == 0) print (r)
+  
 }
 time2 <- Sys.time ()
 time2 - time1
+# N.B.: This takes 4 hours
 
-# get the maximum number of consecutive daily freeze-that for each year
+# get the maximum number of consecutive daily freeze-thaw cycles for each year
 #----------------------------------------------------------------------------------------
 tmp <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
   summarise (maxCFT = max (cFT, na.rm = TRUE), .groups = "keep") 
 climData <- climData %>% add_column (maxCFT = tmp$maxCFT)
 
-# calculate mean annual temperature, mean summer temperature (JJA), and mean winter 
-# temperature (JFM)
+# calculate mean annual temperature, mean growing season temperature (MJJASO), mean winter 
+# temperature (NDJ), and mean sugaring season temperature (FMA)
 #----------------------------------------------------------------------------------------
-# N.B.: TR - Should make this biologically more relevant with the temperatures preceding 
-# the actual sugaring season
+# mean annual temperature
 tmp1 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
   summarise (tmean = mean (temp, na.rm = TRUE), .groups = "keep") 
+# mean growing season temperature (MJJASO)
 tmp2 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
-  filter (Doy >= ifelse (Year %% 4 == 0, 153, 152) & 
-          Doy <= ifelse (Year %% 4 == 0, 244, 243)) %>%
+  filter (Doy >= ifelse (Year %% 4 == 0, 122, 121) &    # after 1 May
+          Doy <= ifelse (Year %% 4 == 0, 305, 304)) %>% # before 31 Oct
   summarise (tmean = mean (temp, na.rm = TRUE), .groups = "keep") 
-tmp3 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
-  filter (Doy <= ifelse (Year %% 4 == 0, 91, 90)) %>%
-  summarise (tmean = mean (temp, na.rm = TRUE), .groups = "keep") 
+# mean winter temperature (NDJ)
+metData <- metData %>% 
+  mutate (wYear = ifelse (Doy >= ifelse (Year %% 4 == 0, 306, 305), Year + 1, Year))
+tmp3 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, wYear) %>%
+  filter (Doy >= ifelse (Year %% 4 == 0, 306, 305) | # after 1 Nov
+          Doy <= 31) %>%                             # before 31 Jan
+  summarise (tmean = mean (temp, na.rm = TRUE), .groups = "keep") %>%
+  rename (Year = wYear) %>% filter (Year != 2022)
+# mean sugaring season temperature (FMA)
+tmp4 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  filter (Doy >= 32 & # after 1 Feb
+          Doy <= ifelse (Year %% 4 == 0, 121, 120)) %>% # before 30 Apr
+  summarise (tmean = mean (temp, na.rm = TRUE), .groups = "keep")
 climData <- climData %>% 
-  add_column (tmean = tmp1$tmean,
-              tmJJA = tmp2$tmean,
-              tmJFM = tmp3$tmean)
+  add_column (tMean = tmp1$tmean,
+              tGrow = tmp2$tmean,
+              tWint = tmp3$tmean,
+              tSpri = tmp4$tmean)
 
-# calculate total annual precipitation, annual snow fall
+# set 2004 winter temperature to NA, because it does not include Nov and Dec 2003
 #----------------------------------------------------------------------------------------
-tmp4 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
+climData <- climData %>% mutate (tWint = replace (tWint, Year == 2004, NA))
+
+# calculate total annual precipitation, growing season precipitation (MJJASO), preceding 
+# winter precipitation and snow fall (NDJ), and spring precipitation and snow fall (FMA)
+#----------------------------------------------------------------------------------------
+# annual precipitation and snow fall
+tmp5 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
   summarise (prec = sum (prec, na.rm = TRUE), 
              snow = sum (snow, na.rm = TRUE), .groups = "keep")
-tmp5 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
-  filter (Doy <= ifelse (Year %% 4 == 0, 91, 90)) %>%
-  summarise (preJFM = sum (prec, na.rm = TRUE), 
-             snoJFM = sum (snow, na.rm = TRUE), .groups = "keep")
-tmp5 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
-  filter (Doy <= ifelse (Year %% 4 == 0, 91, 90)) %>%
-  summarise (preJFM = sum (prec, na.rm = TRUE), 
-             snoJFM = sum (snow, na.rm = TRUE), .groups = "keep")
+# growing season precipitation
+tmp6 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>% 
+  filter (Doy >= ifelse (Year %% 4 == 0, 122, 121) &    # after 1 May
+          Doy <= ifelse (Year %% 4 == 0, 305, 304)) %>% # before 31 Oct
+  summarise (prec = sum (prec, na.rm = TRUE), .groups = "keep")
+# winter precipitation and snow fall
+tmp7 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, wYear) %>% 
+  filter (Doy >= ifelse (Year %% 4 == 0, 306, 305) | # after 1 Nov
+          Doy <= 31) %>%                             # before 31 Jan
+  summarise (prec = sum (prec, na.rm = TRUE), 
+             snow = sum (snow, na.rm = TRUE), .groups = "keep") %>%
+  rename (Year = wYear) %>% filter (Year != 2022)
+# spring precipitation and snow fall
+tmp8 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, wYear) %>% 
+  filter (Doy >= 32 & # after 1 Feb
+          Doy <= ifelse (Year %% 4 == 0, 121, 120)) %>% # before 30 Apr
+  summarise (prec = sum (prec, na.rm = TRUE), 
+             snow = sum (snow, na.rm = TRUE), .groups = "keep") 
 climData <- climData %>% 
-  add_column (prec = tmp4$prec,
-              snow = tmp4$snow)
+  add_column (prec  = tmp5$prec,
+              snow  = tmp5$snow,
+              pGrow = tmp6$prec,
+              pWint = tmp7$prec,
+              sWint = tmp7$snow,
+              pSpri = tmp8$prec,
+              sSpri = tmp8$snow)
 #========================================================================================
