@@ -138,4 +138,23 @@ climData <- climData %>%
               sWint = tmp7$snow,
               pSpri = tmp8$prec,
               sSpri = tmp8$snow)
+
+# calculate mean snow depth for February
+#----------------------------------------------------------------------------------------
+tmp9 <- metData %>% group_by (Name, Latitude, Longitude, Elevation,wYear) %>%
+ filter (lubridate::month (Date) == 2) %>%
+  summarise (snowD = mean (snowDepth, na.rm = TRUE), .groups = "keep")
+climaData <- climData %>%
+  add_column (snowD = tmp9$snowD)
+
+# calculate growing degree days for each day and cumulative sum
+#----------------------------------------------------------------------------------------
+GDDThres <- 5.0 # temperature threshold above which growing degree days are accumulated
+metData <- metData %>% mutate (GDD = ifelse (temp - GDDThres > 0, temp - GDDThres, 0)) 
+metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  mutate (GDDsum = cumsum (GDD)) %>% ungroup () %>% dplyr::select (Doy, GDD, GDDsum)
+  
+# get day of year, when growing degree threshold is reached
+#----------------------------------------------------------------------------------------
+
 #========================================================================================
