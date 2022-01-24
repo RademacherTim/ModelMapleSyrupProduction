@@ -5,16 +5,12 @@
 
 # to-do list: 
 #----------------------------------------------------------------------------------------
-# - improve temporal associations with actually biological processes
-# - add administrative region to the metData and climData tibbles
-# - add snow depth, but an average or max and across which period
-# - add growing degree days
 
 # load dependencies
 #----------------------------------------------------------------------------------------
 if (!existsFunction ("%>%")) library ("tidyverse")
 if (!existsFunction ("read_csv")) library ("readr")
-if (!exists ("metData")) metData <- read_csv ("../data/siteClimate.csv", 
+if (!exists ("metData")) metData <- read_csv ("../data/siteMeteorologies.csv", 
                                               col_types = "cdddiiidddddddddddd")
 if (!existsFunction ("yday")) library ("lubridate")
 if (!existsFunction ("raster")) library ("raster")
@@ -27,7 +23,7 @@ metData <- metData %>%
 
 # extract the number of municipalities
 #----------------------------------------------------------------------------------------
-nMuni <- metData %>% select (Name, Latitude, Longitude) %>% unique ()
+nMuni <- metData %>% dplyr::select (Name, Latitude, Longitude) %>% distinct ()
 
 # calculate the number of days with spring freeze-thaw cycles per year
 #----------------------------------------------------------------------------------------
@@ -37,33 +33,29 @@ climData <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>
 
 # calculate the maximum number of consecutive daily freeze-thaw cycles per year  
 #----------------------------------------------------------------------------------------
+metData <- metData %>% mutate (FT = tmin < -1 & tmax > 1)
 metData$cFT <- NA
 time1 <- Sys.time ()
 for (r in 1:dim (metData) [1]) {
   
-  # save and reset global counter at end of the year
-  if (r != 1) {
-    if (metData$Doy [r] < metData$Doy [r - 1]) l <- 0
-  }
+  # jump iteration if we are later than end of May
+  if (metData$Doy [r] > 150) next
   
-  # increase counter local counter, if day has a freeze thaw cycle
-  if (metData$tmin [r] < -1 & metData$tmax [r] > 1) {
-    l <- l + 1
-  # reset local counter, if it not a freeze-thaw cycle
+  # save and reset global counter at beginning of the year
+  if (metData$Doy [r] == 1) {
+    metData$cFT [r] <- ifelse (metData$FT [r], 1, 0)
+  # increase counter, if day has a freeze thaw cycle, or reset to zero
   } else {
-    l <- 0
+    metData$cFT [r] <- ifelse (metData$FT [r], metData$cFT [r - 1] + 1, 0)
   }
-  
-  # add local counter to the metData
-  metData$cFT [r] <- l
-
+ 
   # give update
-  if (r %% 100000 == 0) print (r)
+  if (r %% 100000 == 0) print (paste (r, Sys.time ()))
   
 }
 time2 <- Sys.time ()
 time2 - time1
-# N.B.: This takes 4 hours
+# N.B.: This takes 4 hours 
 
 # get the maximum number of consecutive daily freeze-thaw cycles for each year
 #----------------------------------------------------------------------------------------
@@ -141,7 +133,7 @@ climData <- climData %>%
 
 # calculate mean snow depth for February
 #----------------------------------------------------------------------------------------
-tmp9 <- metData %>% group_by (Name, Latitude, Longitude, Elevation,wYear) %>%
+tmp9 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, wYear) %>%
  filter (lubridate::month (Date) == 2) %>%
   summarise (snowD = mean (snowDepth, na.rm = TRUE), .groups = "keep")
 climaData <- climData %>%
@@ -151,10 +143,52 @@ climaData <- climData %>%
 #----------------------------------------------------------------------------------------
 GDDThres <- 5.0 # temperature threshold above which growing degree days are accumulated
 metData <- metData %>% mutate (GDD = ifelse (temp - GDDThres > 0, temp - GDDThres, 0)) 
-metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
-  mutate (GDDsum = cumsum (GDD)) %>% ungroup () %>% dplyr::select (Doy, GDD, GDDsum)
+metData <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  mutate (GDDsum = cumsum (GDD)) 
   
-# get day of year, when growing degree threshold is reached
+# get day of year, when growing degree threshold is reached (DOY75 roughly corresponds to 
+# the heat sum necessary for bud break in sugar maple according to )
 #----------------------------------------------------------------------------------------
+GDDcumThres <- 75
+tmp10 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  filter (GDDsum >= GDDcumThres) %>%
+  summarise (DoyGDD = min (Doy))
+climData <- climData %>% 
+  add_column (DoyGDD = tmp10$DoyGDD)
 
+# calculate the mean wind speed at 10m above the surface during the sugaring season (FMA)
+#----------------------------------------------------------------------------------------
+tmp11 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  filter (lubridate::month (Date) %in% 2:4) %>%
+  summarise (windS = mean (wind10, na.rm = TRUE), .groups = "keep")
+climData <- climData %>%
+  add_column (snowD = tmp11$windS)
+
+# calculate the mean atmospheric pressure during the sugaring season (FMA)
+#----------------------------------------------------------------------------------------
+tmp12 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  filter (lubridate::month (Date) %in% 2:4) %>%
+  summarise (presA = mean (pres, na.rm = TRUE), .groups = "keep")
+climData <- climData %>%
+  add_column (presA = tmp12$presA)
+
+# calculate the mean down-welling shortwave radiation during the sugaring season (FMA)
+#----------------------------------------------------------------------------------------
+tmp13 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  filter (lubridate::month (Date) %in% 2:4) %>%
+  summarise (solRa = mean (pres, na.rm = TRUE), .groups = "keep")
+climData <- climData %>%
+  add_column (rSpri = tmp13$solRa)
+
+# calculate the mean down-welling shortwave radiation during the growing season (MJJASO)
+#----------------------------------------------------------------------------------------
+tmp14 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  filter (lubridate::month (Date) %in% 5:10) %>%
+  summarise (solRa = mean (pres, na.rm = TRUE), .groups = "keep")
+climData <- climData %>%
+  add_column (rGrow = tmp14$solRa)
+
+# write csv file with derived meteorological variables
+#----------------------------------------------------------------------------------------
+write_csv (climData, "../data/siteDerivedMeteorologicalVariables.csv")
 #========================================================================================

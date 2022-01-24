@@ -104,7 +104,7 @@ for (s in 1:length (municipalities$Name)) {
 }
 
 # write csv file with mean daily climate data
-write_csv (tmp, file = "../data/siteClimate.csv")
+write_csv (tmp, file = "../data/siteMeteorologies.csv")
 # 643 municipalities * (365 days per year * 13 years + 366 days per year * 5 years) = 
 # 643 * (4745 + 1830) = 643 * 6575 = 4 227 725 lines
 #========================================================================================

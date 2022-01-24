@@ -8,7 +8,7 @@
 #----------------------------------------------------------------------------------------
 if (!exists ('production')) source ('readProductionData.R')
 if (!existsFunction ('dms2char')) library ('sp')
-if (!exists ("climData")) source ("calculateClimaticVariables.R")
+if (!exists ("climData")) climData <- read_csv ("../data/siteDerivedMeteorologicalVariabels.csv")
 
 # read file with locations of the municipalities from données Québec
 # downloaded from https://statistique.quebec.ca/pls/hcp/hcp225_fichr_seqnt.hcp225_f1?pvcLangue=fr
@@ -39,10 +39,10 @@ SSep <- substr (muniCoord$latitude, 11, 11) [1]
 
 # create DMS object of latitude and longitude and convert to decimal
 #----------------------------------------------------------------------------------------
-muniCoord$lat <- as.numeric (char2dms (from = muniCoord$latitude, 
-                                       chd = DSep, chm = MSep, chs = SSep))
-muniCoord$lon <- -as.numeric (char2dms (from = muniCoord$longitude, 
-                                        chd = DSep, chm = MSep, chs = SSep))
+muniCoord$lat <- as.numeric (sp::char2dms (from = muniCoord$latitude, 
+                                           chd = DSep, chm = MSep, chs = SSep))
+muniCoord$lon <- -as.numeric (sp::char2dms (from = muniCoord$longitude, 
+                                            chd = DSep, chm = MSep, chs = SSep))
 
 # loop over production data to get coordinates of municipalities with producers
 #----------------------------------------------------------------------------------------
@@ -122,7 +122,8 @@ rm (r, i)
 # add climate data to the production tibble for each site
 #-------------------------------------------------------------------------------
 production$FT <- NA; production$maxCFT <- NA
-production$tmean <- NA; production$tmJJA <- NA; production$tmJFM <- NA
+production$tMean <- NA; production$tGrow <- NA; production$tWint <- NA
+production$tSpri <- NA
 production$prec <- NA; production$snow <- NA
 for (s in 1:dim (climData) [1]) {
   

@@ -1,0 +1,32 @@
+---
+title: "Explore climate-production relationships"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Links between climate and maple syrup production 
+
+Maple syrup production is intrinsically linked to climate due to known biophysical processes that result in positive stem pressures after freeze-thaw cycles [@REF]. Several previous studies showed general links between preceding meteorological conditions and syrup production [@REF], as well as the underlying production volume and sugar content [@REF]. 
+
+We will explore the climatic relationships between production data from the *Producteurs et Productrices Acéricole du Québec* (PPAQ) at the municipal scale for the 2005 to 2021 period and climate data simulated for each producing municipality. We simulated the following climate variables using BioSIM [@REF] for every day from 2004 to 2021:
+
+* Minimum, mean and maximum temperature
+* Total rainfall, snowfall, and precipitation
+* Mean snow cover
+* Mean relative humidity
+* Mean wind direction and speed (at 2 and 10 m)
+* Total down-welling shortwave radiation
+* Mean atmospheric pressure 
+
+### Biologically meaningful variables
+
+
+
+```{r sourceData, echo = FALSE}
+# load matched climate and production data
+if (!exists ("production") source ("matchClimAndProdData.R"))
+
+```
