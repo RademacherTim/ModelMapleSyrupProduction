@@ -50,12 +50,13 @@ for (r in 1:dim (metData) [1]) {
   }
  
   # give update
-  if (r %% 100000 == 0) print (paste (r, Sys.time ()))
+  if (metData$Doy [r] == 1 & metData$Year [r] == 2004) print (paste (r, metData$Name [r], 
+                                                             metData$cFT [r], Sys.time ()))
   
 }
 time2 <- Sys.time ()
 time2 - time1
-# N.B.: This takes 4 hours 
+# N.B.: This takes about 1 hour and 45 minutes 
 
 # get the maximum number of consecutive daily freeze-thaw cycles for each year
 #----------------------------------------------------------------------------------------
@@ -123,8 +124,8 @@ tmp8 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, wYear) %>%
   summarise (prec = sum (prec, na.rm = TRUE), 
              snow = sum (snow, na.rm = TRUE), .groups = "keep") 
 climData <- climData %>% 
-  add_column (prec  = tmp5$prec,
-              snow  = tmp5$snow,
+  add_column (pTota = tmp5$prec,
+              sTota = tmp5$snow,
               pGrow = tmp6$prec,
               pWint = tmp7$prec,
               sWint = tmp7$snow,
@@ -136,7 +137,7 @@ climData <- climData %>%
 tmp9 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, wYear) %>%
  filter (lubridate::month (Date) == 2) %>%
   summarise (snowD = mean (snowDepth, na.rm = TRUE), .groups = "keep")
-climaData <- climData %>%
+climData <- climData %>%
   add_column (snowD = tmp9$snowD)
 
 # calculate growing degree days for each day and cumulative sum
@@ -152,7 +153,7 @@ metData <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
 GDDcumThres <- 75
 tmp10 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
   filter (GDDsum >= GDDcumThres) %>%
-  summarise (DoyGDD = min (Doy))
+  summarise (DoyGDD = min (Doy), .groups = "keep")
 climData <- climData %>% 
   add_column (DoyGDD = tmp10$DoyGDD)
 
@@ -162,7 +163,7 @@ tmp11 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
   filter (lubridate::month (Date) %in% 2:4) %>%
   summarise (windS = mean (wind10, na.rm = TRUE), .groups = "keep")
 climData <- climData %>%
-  add_column (snowD = tmp11$windS)
+  add_column (wSpri = tmp11$windS)
 
 # calculate the mean atmospheric pressure during the sugaring season (FMA)
 #----------------------------------------------------------------------------------------
@@ -170,23 +171,21 @@ tmp12 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
   filter (lubridate::month (Date) %in% 2:4) %>%
   summarise (presA = mean (pres, na.rm = TRUE), .groups = "keep")
 climData <- climData %>%
-  add_column (presA = tmp12$presA)
+  add_column (aSpri = tmp12$presA)
 
-# calculate the mean down-welling shortwave radiation during the sugaring season (FMA)
+# calculate the mean down-welling shortwave radiation [TR - units??? and should I use mean or total]
 #----------------------------------------------------------------------------------------
+# previous growing season (MJJASO)
 tmp13 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
-  filter (lubridate::month (Date) %in% 2:4) %>%
-  summarise (solRa = mean (pres, na.rm = TRUE), .groups = "keep")
-climData <- climData %>%
-  add_column (rSpri = tmp13$solRa)
-
-# calculate the mean down-welling shortwave radiation during the growing season (MJJASO)
-#----------------------------------------------------------------------------------------
-tmp14 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
   filter (lubridate::month (Date) %in% 5:10) %>%
-  summarise (solRa = mean (pres, na.rm = TRUE), .groups = "keep")
+  summarise (solRa = mean (rad, na.rm = TRUE), .groups = "keep")
+# sugaring season/ spring (FMA)
+tmp14 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
+  filter (lubridate::month (Date) %in% 2:4) %>%
+  summarise (solRa = mean (rad, na.rm = TRUE), .groups = "keep")
 climData <- climData %>%
-  add_column (rGrow = tmp14$solRa)
+  add_column (rGrow = tmp13$solRa,
+              rSpri = tmp14$solRa)
 
 # write csv file with derived meteorological variables
 #----------------------------------------------------------------------------------------

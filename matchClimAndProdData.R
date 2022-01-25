@@ -8,7 +8,7 @@
 #----------------------------------------------------------------------------------------
 if (!exists ('production')) source ('readProductionData.R')
 if (!existsFunction ('dms2char')) library ('sp')
-if (!exists ("climData")) climData <- read_csv ("../data/siteDerivedMeteorologicalVariabels.csv")
+if (!exists ("climData")) climData <- read_csv ("../data/siteDerivedMeteorologicalVariables.csv")
 
 # read file with locations of the municipalities from données Québec
 # downloaded from https://statistique.quebec.ca/pls/hcp/hcp225_fichr_seqnt.hcp225_f1?pvcLangue=fr
@@ -116,15 +116,19 @@ for (r in 1:dim (production) [1]) {
 }
 
 # temporary clean index variables
-#-------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
 rm (r, i)
 
 # add climate data to the production tibble for each site
-#-------------------------------------------------------------------------------
+#----------------------------------------------------------------------------------------
 production$FT <- NA; production$maxCFT <- NA
 production$tMean <- NA; production$tGrow <- NA; production$tWint <- NA
 production$tSpri <- NA
-production$prec <- NA; production$snow <- NA
+production$pTota <- NA; production$sTota <- NA; production$pGrow <- NA
+production$pWint <- NA; production$sWint <- NA; production$pSpri <- NA
+production$sSpri <- NA; production$snowD <- NA
+production$DoyGDD <- NA; production$wSpri <- NA; production$aSpri <- NA
+production$rGrow <- NA; production$rSpri <- NA
 for (s in 1:dim (climData) [1]) {
   
   # get indices of production sites for this municipality and year
@@ -138,5 +142,9 @@ for (s in 1:dim (climData) [1]) {
   #-----------------------------------------------------------------------------
   production [i, 15:dim (production) [2]] <- climData [s, 6:dim (climData) [2]]
 }
+
+# save production data with appended climate data to speed up processing
+#----------------------------------------------------------------------------------------
+write_csv (production, "../data/productionData.csv")
 
 #========================================================================================

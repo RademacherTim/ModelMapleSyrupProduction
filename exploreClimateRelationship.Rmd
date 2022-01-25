@@ -5,6 +5,22 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+
+# load dependencies
+#----------------------------------------------------------------------------------------
+library ("lme4") # for mixed effects models 
+library ("brms") # for bayesian models
+library ("readr") # to read csv files
+
+# load matched climate and production data
+#----------------------------------------------------------------------------------------
+if (!exists ("production")) production <- read_csv ("../data/productionData.csv") 
+
+# to-do list:
+#----------------------------------------------------------------------------------------
+# TR - Add bibliography and citations 
+# TR - Insert graphic of periodsOfInfluence and write section about derived variables
+# TR - Integrate more realistic models to explain 
 ```
 
 ## Links between climate and maple syrup production 
@@ -23,10 +39,41 @@ We will explore the climatic relationships between production data from the *Pro
 
 ### Biologically meaningful variables
 
+Let's start with looking at the climate space we are covering.   
+
+```{r climateSpacePlot, echo = FALSE}
+# plot climate space of the production in Quebec
+#----------------------------------------------------------------------------------------
+plot (x = production$tMean,
+      y = production$pTota,
+      xlab = expression (paste ("Mean annual temperature (",degree,"C)")),
+      ylab = "Total annual precipitation (mm)", pch = 19, col = "#cc724011",
+      axes = FALSE, xlim = c (0, 10), ylim = c (0, 1800))
+axis (side = 1, at = seq (0, 10, by = 2))
+axis (side = 2, at = seq (0, 1800, by = 300), las = 1)
+```
+
+Next, we can look at any relationship between mean annual temperature and total annual precipitation versus production per tap ($L \, tap^{-1}$).
 
 
-```{r sourceData, echo = FALSE}
-# load matched climate and production data
-if (!exists ("production") source ("matchClimAndProdData.R"))
-
+```{r tMeanVmeanP, echo = FALSE}
+par (mfrow  = c (1, 2))
+# plot climate space of the production in Quebec
+#----------------------------------------------------------------------------------------
+plot (x = production$tMean,
+      y = production$meanP,
+      xlab = expression (paste ("Mean annual temperature (",degree,"C)")),
+      ylab = expression (paste ("Approximated maple yield (L ", tap^-1,")")), 
+      pch = 19, col = "#cc724011",
+      axes = FALSE, xlim = c (0, 10), ylim = c (0, 5))
+axis (side = 1, at = seq (0, 10, by = 2))
+axis (side = 2, at = 1:5, las = 1)
+plot (x = production$pTota,
+      y = production$meanP,
+      xlab = "Total annual precipitation (mm)",
+      ylab = expression (paste ("Approximated maple yield (L ", tap^-1,")")), 
+      pch = 19, col = "#cc724011",
+      axes = FALSE, xlim = c (0, 1800), ylim = c (0, 5))
+axis (side = 1, at = seq (0, 1800, by = 300))
+axis (side = 2, at = 1:5, las = 1)
 ```
