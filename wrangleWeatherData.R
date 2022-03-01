@@ -40,6 +40,7 @@ options (warn = 2)
 
 # loop over each site
 #----------------------------------------------------------------------------------------
+time0 <- Sys.time ()
 for (s in 1:length (municipalities$Name)) {
   
   # read 2005 to 2020 data
@@ -100,8 +101,9 @@ for (s in 1:length (municipalities$Name)) {
   }
   
   # print feedback every 30 sites
-  if (s %% 30 == 0) print (s)
+  if (s %% 100 == 0) print (s)
 }
+time1 <- Sys.time ()
 
 # write csv file with mean daily climate data
 write_csv (tmp, file = "../data/siteMeteorologies.csv")

@@ -56,7 +56,7 @@ for (r in 1:dim (metData) [1]) {
 }
 time2 <- Sys.time ()
 time2 - time1
-# N.B.: This takes about 1 hour and 45 minutes 
+# N.B.: This takes about 2 hours 
 
 # get the maximum number of consecutive daily freeze-thaw cycles for each year
 #----------------------------------------------------------------------------------------

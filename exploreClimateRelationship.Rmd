@@ -1,5 +1,5 @@
 ---
-title: "Explore climate-production relationships"
+title: "Explore climate-production relationships for maple syrup"
 output: html_document
 ---
 
@@ -42,6 +42,7 @@ We will explore the climatic relationships between production data from the *Pro
 Let's start with looking at the climate space we are covering.   
 
 ```{r climateSpacePlot, echo = FALSE}
+par (mar = c (5, 5, 2, 1))
 # plot climate space of the production in Quebec
 #----------------------------------------------------------------------------------------
 plot (x = production$tMean,
@@ -58,6 +59,7 @@ Next, we can look at any relationship between mean annual temperature and total 
 
 ```{r tMeanVmeanP, echo = FALSE}
 par (mfrow  = c (1, 2))
+par (mar = c (5, 5, 2, 1))
 # plot climate space of the production in Quebec
 #----------------------------------------------------------------------------------------
 plot (x = production$tMean,
@@ -68,10 +70,11 @@ plot (x = production$tMean,
       axes = FALSE, xlim = c (0, 10), ylim = c (0, 5))
 axis (side = 1, at = seq (0, 10, by = 2))
 axis (side = 2, at = 1:5, las = 1)
+par (mar = c (5, 1, 2, 1))
 plot (x = production$pTota,
       y = production$meanP,
       xlab = "Total annual precipitation (mm)",
-      ylab = expression (paste ("Approximated maple yield (L ", tap^-1,")")), 
+      ylab = "", 
       pch = 19, col = "#cc724011",
       axes = FALSE, xlim = c (0, 1800), ylim = c (0, 5))
 axis (side = 1, at = seq (0, 1800, by = 300))
