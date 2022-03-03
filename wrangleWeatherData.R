@@ -1,5 +1,6 @@
 #========================================================================================
-# Script to read and re-organise the simulated climate data (BioSIM 11)
+# Script to read and re-organise the simulated climate data (BioSIM 11) and generate the
+# siteMeteorologies.csv file.
 #----------------------------------------------------------------------------------------
 
 # load dependencies
@@ -104,6 +105,7 @@ for (s in 1:length (municipalities$Name)) {
   if (s %% 100 == 0) print (s)
 }
 time1 <- Sys.time ()
+# N.B.: This currently takes about 4.56 hours for 643 sites.
 
 # write csv file with mean daily climate data
 write_csv (tmp, file = "../data/siteMeteorologies.csv")

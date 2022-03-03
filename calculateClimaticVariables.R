@@ -50,13 +50,13 @@ for (r in 1:dim (metData) [1]) {
   }
  
   # give update
-  if (metData$Doy [r] == 1 & metData$Year [r] == 2004) print (paste (r, metData$Name [r], 
-                                                             metData$cFT [r], Sys.time ()))
-  
+  if (metData$Doy [r] == 365 & metData$Year [r] == 2004) {
+    print (paste (r, metData$Name [r], metData$cFT [r], Sys.time ()))
+  }
 }
 time2 <- Sys.time ()
 time2 - time1
-# N.B.: This takes about 2 hours 
+# N.B.: This takes about 3 hours 
 
 # get the maximum number of consecutive daily freeze-thaw cycles for each year
 #----------------------------------------------------------------------------------------
@@ -149,6 +149,7 @@ metData <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
   
 # get day of year, when growing degree threshold is reached (DOY75 roughly corresponds to 
 # the heat sum necessary for bud break in sugar maple according to )
+# proxy for end of the season
 #----------------------------------------------------------------------------------------
 GDDcumThres <- 75
 tmp10 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
@@ -179,7 +180,7 @@ climData <- climData %>%
 tmp13 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
   filter (lubridate::month (Date) %in% 5:10) %>%
   summarise (solRa = mean (rad, na.rm = TRUE), .groups = "keep")
-# sugaring season/ spring (FMA)
+# sugaring season/spring (FMA)
 tmp14 <- metData %>% group_by (Name, Latitude, Longitude, Elevation, Year) %>%
   filter (lubridate::month (Date) %in% 2:4) %>%
   summarise (solRa = mean (rad, na.rm = TRUE), .groups = "keep")

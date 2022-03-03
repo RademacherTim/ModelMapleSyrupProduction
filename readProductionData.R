@@ -31,6 +31,14 @@ addAlpha <- function (col,       # color name
   invisible (colAlpha)
 }
 
+# conversion factor from pound to kg
+#----------------------------------------------------------------------------------------
+lbsToKgs <- 0.45359237
+
+# conversion factor from weight of syrup to weight of maple sugar
+#----------------------------------------------------------------------------------------
+syrupToSugar <- 0.67
+
 # read production data file 
 #----------------------------------------------------------------------------------------
 production <- readxl::read_excel (path = '../data/PPAQ/20211105_MR_InfoProd_cleaned_provisional.xlsx',
@@ -77,32 +85,39 @@ mtext (side = 2, line = 4, text = 'Number of producers')
 dev.off ()
 
 # how many people reported no taps?
+#----------------------------------------------------------------------------------------
 sum (production$numberOfTaps == 0)
 # 788 instances of no tapping at all
 # 0 instances of negative number of taps 
 
 # remove the instances of no reported tapping
+#----------------------------------------------------------------------------------------
 production <- production [-which (production$numberOfTaps == 0), ]
 
 # how many people reported less than 100 taps?
+#----------------------------------------------------------------------------------------
 sum (production$numberOfTaps < 100)
 # 799 instances of less than 100 taps
 
 # how many people reported no production?
+#----------------------------------------------------------------------------------------
 sum (production$totalProduction == 0)
 # 6422 instances of no production
 # 0 instances of negative total production
 
 # remove instances of no production sold to PPAQ
+#----------------------------------------------------------------------------------------
 production <- production [-which (production$totalProduction == 0), ]
 
-# create a new column with production in liters 
+# create a new column with production in kg of sugar
 # Unit conversions according to MAPAQ (26th of November): https://www.mapaq.gouv.qc.ca/fr/Publications/Unitesconversion.pdf
 # Duchesne et Houle (2014) used 344 ml of syrup per pound from a government report of Canada called "Canadian Maple Products Situation and Trends 2006-2007"
-production$totalP <- production$totalProduction * 0.3431532 
-production$meanP <- production$meanProduction * 0.3431532
+#----------------------------------------------------------------------------------------
+production$totalP <- production$totalProduction * lbsToKgs * syrupToSugar
+production$meanP <- production$meanProduction * lbsToKgs * syrupToSugar
 
 # plot number of taps to get an idea of company size
+#----------------------------------------------------------------------------------------
 PLOT <- FALSE
 if (PLOT) {
   png ('../fig/numberOfTapsPerProducers.png', width = 700, height = 400)
@@ -275,6 +290,7 @@ if (PLOT) {
   dev.off ()
 }
 
-# What is the largest producer?
+# what is the largest producer?
+#----------------------------------------------------------------------------------------
 production [which (max (production$numberOfTaps) == production$numberOfTaps), ]
 #========================================================================================

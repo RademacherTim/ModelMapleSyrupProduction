@@ -1,5 +1,7 @@
 #========================================================================================
-# Script to match maple syrup producer data with climate data 
+# Script to match maple syrup producer data (PPAQ) with simulated climate data for each 
+# municipality (BioSIM 11). The matched and combined data is saved as productionData.csv 
+# for further analysis. 
 #
 # To-do list:
 #----------------------------------------------------------------------------------------
@@ -132,19 +134,23 @@ production$rGrow <- NA; production$rSpri <- NA
 for (s in 1:dim (climData) [1]) {
   
   # get indices of production sites for this municipality and year
-  #-----------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------------
   i <- which (round (production$lat, 4) == round (climData$Latitude [s], 4) &
               round (production$lon, 4) == round (climData$Longitude [s], 4) & 
               production$municipality == climData$Name [s] &
               production$year == climData$Year [s])
   
   # associate annual climate and production data
-  #-----------------------------------------------------------------------------
+  #--------------------------------------------------------------------------------------
   production [i, 15:dim (production) [2]] <- climData [s, 6:dim (climData) [2]]
 }
 
 # save production data with appended climate data to speed up processing
 #----------------------------------------------------------------------------------------
 write_csv (production, "../data/productionData.csv")
+
+# clean workspace
+#----------------------------------------------------------------------------------------
+rm (DSep, MSep, SSep, PLOT)
 
 #========================================================================================
